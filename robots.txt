@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /_m
+Disallow: /_dbg
+
+Sitemap: https://zengsicheng.com/sitemap.xml

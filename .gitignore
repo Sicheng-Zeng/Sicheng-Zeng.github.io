@@ -1,0 +1,10 @@
+.DS_Store
+Pics/
+files/
+_m*.html
+_dbg.html
+dist/
+*.zip
+deploy/tools/
+.qa/
+.deploy-tools/
