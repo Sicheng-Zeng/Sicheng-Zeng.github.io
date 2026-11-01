@@ -1,6 +1,7 @@
 /* =========================================================
    曾思诚 · 欢迎页
-   大字背景 + Q 版形象（视线跟随鼠标）+ 进入按钮
+   背景大字 + Q 版形象（视线跟随）+ 进入按钮
+   页面只保留：大字 / 形象 / 两行文字 / 按钮
    ========================================================= */
 
 :root {
@@ -9,7 +10,6 @@
   --ink: #14120f;
   --ink-soft: #3a352f;
   --muted: #857f78;
-  --line: #e8e4dd;
   --accent: #9a6a3f;
 
   --font-sans: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB",
@@ -18,11 +18,12 @@
 
   --ease: cubic-bezier(0.22, 0.68, 0.16, 1);
 
-  /* 由 JS 写入：-1 → 1 */
+  /* JS 写入：-1 → 1 */
   --mx: 0;
   --my: 0;
-  --eye-x: 7px;
-  --eye-y: 5px;
+  /* 瞳孔最大位移（CSS 像素），JS 按实际渲染宽度换算 */
+  --eye-x: 0px;
+  --eye-y: 0px;
 }
 
 *,
@@ -34,7 +35,7 @@ html, body { height: 100%; }
 body.welcome {
   margin: 0;
   background:
-    radial-gradient(120% 90% at 50% 8%, #fffdf8 0%, var(--paper) 42%, var(--paper-warm) 100%);
+    radial-gradient(120% 90% at 50% 6%, #fffdf8 0%, var(--paper) 44%, var(--paper-warm) 100%);
   color: var(--ink);
   font-family: var(--font-sans);
   overflow: hidden;
@@ -52,37 +53,16 @@ body.welcome {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.14'/%3E%3C/svg%3E");
 }
 
-/* ---------- 顶栏 ---------- */
-.topbar {
-  position: fixed;
-  top: clamp(18px, 3.2vh, 34px);
-  left: 0;
-  right: 0;
-  z-index: 4;
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  padding: 0 clamp(20px, 4.4vw, 64px);
-  font-size: 11px;
-  letter-spacing: 0.2em;
-  color: var(--muted);
-  text-transform: uppercase;
-}
-
-.brand { margin: 0; display: flex; gap: 10px; align-items: baseline; color: var(--ink-soft); }
-.brand-en { letter-spacing: 0.24em; }
-.topbar-right { margin: 0; letter-spacing: 0.18em; }
-
 /* ---------- 背景大字 ---------- */
 .wordmark {
   position: fixed;
-  top: 47%;
+  top: 17.5%;
   left: 50%;
   z-index: 1;
   margin: 0;
   font-family: var(--font-serif);
   font-weight: 500;
-  font-size: clamp(76px, 17.2vw, 260px);
+  font-size: clamp(74px, 17.4vw, 262px);
   line-height: 0.9;
   letter-spacing: -0.035em;
   white-space: nowrap;
@@ -93,6 +73,7 @@ body.welcome {
   will-change: transform;
   user-select: none;
   pointer-events: none;
+  animation: fadeIn 1.4s var(--ease) both;
 }
 
 /* ---------- 主体 ---------- */
@@ -103,18 +84,18 @@ body.welcome {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-end;
-  padding-bottom: clamp(18px, 4vh, 46px);
-  gap: clamp(10px, 2vh, 22px);
+  justify-content: center;
+  gap: clamp(22px, 4vh, 46px);
+  padding: clamp(40px, 10vh, 104px) 24px clamp(12px, 2.4vh, 26px);
 }
 
 .avatar-wrap {
   perspective: 1200px;
-  margin-bottom: auto;
-  margin-top: clamp(70px, 12vh, 150px);
   display: grid;
   justify-items: center;
   position: relative;
+  animation: riseIn 1.1s var(--ease) both;
+  animation-delay: 0.12s;
 }
 
 .avatar-tilt {
@@ -122,10 +103,10 @@ body.welcome {
   height: clamp(300px, 56vh, 620px);
   transform-style: preserve-3d;
   transform:
-    rotateY(calc(var(--mx) * 6.5deg))
-    rotateX(calc(var(--my) * -4.5deg))
-    translate3d(calc(var(--mx) * 9px), calc(var(--my) * 6px), 0);
-  transition: transform 0.12s linear;
+    rotateY(calc(var(--mx) * 5deg))
+    rotateX(calc(var(--my) * -3.5deg))
+    translate3d(calc(var(--mx) * 8px), calc(var(--my) * 5px), 0);
+  transition: transform 0.14s linear;
   will-change: transform;
   mask-image: linear-gradient(to bottom, #000 86%, rgba(0, 0, 0, 0.55) 96%, transparent 100%);
   -webkit-mask-image: linear-gradient(to bottom, #000 86%, rgba(0, 0, 0, 0.55) 96%, transparent 100%);
@@ -146,67 +127,43 @@ body.welcome {
   inset: 0;
   height: 100%;
   margin: auto;
-  transform: translate3d(calc(var(--mx) * var(--eye-x)), calc(var(--my) * var(--eye-y)), 0);
-  transition: transform 0.08s linear;
+  transform: translate3d(var(--eye-x), var(--eye-y), 0);
+  transition: transform 0.1s linear;
   will-change: transform;
 }
 
-/* 柔和的落地阴影，避免人像像贴纸 */
 .avatar-shadow {
   position: absolute;
-  bottom: -2px;
+  bottom: -1px;
   left: 50%;
-  width: min(78%, 420px);
-  height: 26px;
+  width: min(72%, 380px);
+  height: 22px;
   transform: translateX(-50%);
-  background: radial-gradient(ellipse at center, rgba(60, 46, 30, 0.16) 0%, rgba(60, 46, 30, 0) 70%);
+  background: radial-gradient(ellipse at center, rgba(60, 46, 30, 0.14) 0%, rgba(60, 46, 30, 0) 70%);
   filter: blur(2px);
   pointer-events: none;
 }
 
-/* ---------- 底部文案 + 按钮 ---------- */
+/* ---------- 按钮 ---------- */
+.visually-hidden {
+  position: absolute;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
 .hero-foot {
   display: grid;
   justify-items: center;
-  gap: 10px;
-  text-align: center;
-  padding: 0 24px;
-}
-
-.hero-kicker {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0;
-  font-size: 11.5px;
-  letter-spacing: 0.22em;
-  color: var(--muted);
-}
-
-.kicker-dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--accent);
-}
-
-.hero-title {
-  margin: 0;
-  font-family: var(--font-serif);
-  font-weight: 600;
-  font-size: clamp(19px, 2.1vw, 26px);
-  letter-spacing: 0.14em;
-}
-
-.hero-sub {
-  margin: 0;
-  font-size: clamp(11.5px, 1vw, 13px);
-  letter-spacing: 0.05em;
-  color: var(--ink-soft);
+  animation: riseIn 1.1s var(--ease) both;
+  animation-delay: 0.3s;
 }
 
 .enter {
-  margin-top: 10px;
   display: inline-flex;
   align-items: center;
   gap: 10px;
@@ -233,36 +190,9 @@ body.welcome {
 .enter-arrow { display: inline-grid; place-items: center; transition: transform 0.35s var(--ease); }
 .enter:hover .enter-arrow { transform: translate(2px, -2px); }
 
-.hero-hint {
-  margin: 2px 0 0;
-  font-size: 10.5px;
-  letter-spacing: 0.16em;
-  color: var(--muted);
-  opacity: 0.75;
-}
-
-/* ---------- 页脚信息 ---------- */
-.corner {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: clamp(14px, 2.4vh, 24px);
-  z-index: 2;
-  display: flex;
-  justify-content: space-between;
-  padding: 0 clamp(20px, 4.4vw, 64px);
-  font-size: 10.5px;
-  letter-spacing: 0.14em;
-  color: var(--muted);
-  opacity: 0.7;
-  pointer-events: none;
-}
-
-.corner-sep { opacity: 0.5; }
-
-/* ---------- 入场 ---------- */
+/* ---------- 动效 ---------- */
 @keyframes riseIn {
-  from { opacity: 0; transform: translateY(14px); }
+  from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
@@ -271,55 +201,30 @@ body.welcome {
   to { opacity: 1; }
 }
 
-.topbar, .avatar-wrap, .hero-foot, .corner {
-  animation: riseIn 1s var(--ease) both;
-}
-/* 大字自己用了 transform 做视差，入场只能动 opacity，否则会覆盖居中位移 */
-.wordmark { animation: fadeIn 1.4s var(--ease) both; }
-.wordmark { animation-delay: 0.05s; }
-.avatar-wrap { animation-delay: 0.12s; }
-.hero-foot { animation-delay: 0.30s; }
-.corner { animation-delay: 0.45s; }
-
-/* 离开时的转场 */
-body
-body.is-leaving .avatar-tilt { transform: scale(1.1); }
-body.is-leaving .hero-foot,
-body.is-leaving .topbar,
-body.is-leaving .corner { opacity: 0; transform: translateY(8px); }
+/* 进入时的转场 */
+body.is-leaving .wordmark { opacity: 0; }
+body.is-leaving .avatar-tilt { transform: scale(1.08); }
+body.is-leaving .hero-foot { opacity: 0; transform: translateY(8px); }
 body.is-leaving .wordmark,
 body.is-leaving .avatar-tilt,
-body.is-leaving .hero-foot,
-body.is-leaving .topbar,
-body.is-leaving .corner { transition: opacity 0.42s var(--ease), transform 0.5s var(--ease); }
+body.is-leaving .hero-foot { transition: opacity 0.42s var(--ease), transform 0.5s var(--ease); }
 
 /* ---------- 响应式 ---------- */
 @media (max-width: 760px) {
-  .wordmark { font-size: clamp(52px, 19vw, 110px); top: 50%; }
-  .avatar-tilt { height: clamp(230px, 40vh, 380px); }
-  .avatar-wrap {
-    margin-top: clamp(52px, 8vh, 92px);
-    margin-bottom: clamp(10px, 3vh, 28px);
-  }
-  .corner { display: none; }
-  .hero { padding-bottom: 30px; gap: 8px; }
-  .hero-title { font-size: 18px; }
-  .hero-sub { font-size: 11.5px; }
-  .enter { margin-top: 6px; padding: 10px 26px; }
-  .hero-hint { display: none; }
-  .hero { justify-content: center; padding-top: 84px; }
-  .avatar-wrap { margin-top: 0; margin-bottom: clamp(14px, 3vh, 26px); }
+  .wordmark { font-size: clamp(52px, 20vw, 112px); top: 16.5%; }
+  .avatar-tilt { height: clamp(240px, 42vh, 400px); }
+  .hero { gap: clamp(16px, 3vh, 26px); padding-top: clamp(60px, 11vh, 120px); padding-bottom: clamp(20px, 4vh, 44px); }
+  .enter { padding: 10px 26px; }
 }
 
-@media (max-height: 640px) and (min-width: 761px) {
-  .avatar-tilt { height: clamp(240px, 48vh, 380px); }
-  .hero { gap: 6px; }
-  .hero-sub, .hero-hint { display: none; }
+@media (max-height: 700px) {
+  .avatar-tilt { height: clamp(220px, 46vh, 380px); }
+  .hero { gap: 14px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .avatar-tilt,
   .avatar-eyes,
   .wordmark { transform: none !important; transition: none !important; }
-  .topbar, .wordmark, .avatar-wrap, .hero-foot, .corner { animation: none; }
+  .avatar-wrap, .hero-foot, .wordmark { animation: none; }
 }

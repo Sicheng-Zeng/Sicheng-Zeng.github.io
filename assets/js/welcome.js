@@ -38,13 +38,16 @@
     target.y = 0;
   });
 
-  /* 根据实际渲染尺寸计算瞳孔最大位移（源图 800 宽，显示约 300 宽） */
+  /* 瞳孔位移上限：源图坐标里的安全值，再按实际渲染尺寸换算成 CSS 像素。
+     源图 800px 宽，虹膜半径 36px，眼白左右余量约 34 / 19px、上下 22 / 14px；
+     取 6px / 3.5px 留足余量，保证任何情况下都不碰眼眶。 */
+  var SRC_W = 800, EYE_SRC_X = 6, EYE_SRC_Y = 3.5;
+  var maxEyeX = 3, maxEyeY = 2;
   function updateEyeRange() {
     if (!avatar) return;
-    var rect = avatar.getBoundingClientRect();
-    var w = rect.width || 300;
-    root.style.setProperty('--eye-x', Math.max(4, Math.round(w * 0.028)) + 'px');
-    root.style.setProperty('--eye-y', Math.max(3, Math.round(w * 0.019)) + 'px');
+    var w = avatar.getBoundingClientRect().width || 300;
+    maxEyeX = w * EYE_SRC_X / SRC_W;
+    maxEyeY = w * EYE_SRC_Y / SRC_W;
   }
   updateEyeRange();
   window.addEventListener('resize', updateEyeRange);
@@ -61,12 +64,18 @@
     var dx = current.x, dy = current.y;
     if (idle) {
       var t = Date.now() / 2600;
-      dx += Math.sin(t) * 0.16;
-      dy += Math.cos(t * 0.8) * 0.10;
+      dx += Math.sin(t) * 0.12;
+      dy += Math.cos(t * 0.8) * 0.08;
     }
+
+    // 硬性夹紧：无论鼠标在哪个边缘、是否叠加了自动漂移
+    dx = Math.max(-1, Math.min(1, dx));
+    dy = Math.max(-1, Math.min(1, dy));
 
     root.style.setProperty('--mx', dx.toFixed(4));
     root.style.setProperty('--my', dy.toFixed(4));
+    root.style.setProperty('--eye-x', (dx * maxEyeX).toFixed(2) + 'px');
+    root.style.setProperty('--eye-y', (dy * maxEyeY).toFixed(2) + 'px');
     raf = requestAnimationFrame(tick);
   }
 
