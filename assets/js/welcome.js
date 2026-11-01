@@ -1,5 +1,5 @@
 /* =========================================================
-   欢迎页交互：视线跟随 + 头部视差 + 进入转场
+   欢迎页交互：视线跟随 + 眨眼 + 进入转场
    ========================================================= */
 (function () {
   'use strict';
@@ -18,7 +18,6 @@
   function setPointer(clientX, clientY) {
     var w = window.innerWidth || 1;
     var h = window.innerHeight || 1;
-    // 归一化到 -1..1，并做一点非线性，让中间区域更细腻
     target.x = Math.max(-1, Math.min(1, (clientX / w) * 2 - 1));
     target.y = Math.max(-1, Math.min(1, (clientY / h) * 2 - 1));
     lastMove = Date.now();
@@ -32,17 +31,37 @@
     if (e.touches.length) setPointer(e.touches[0].clientX, e.touches[0].clientY);
   }, { passive: true });
 
-  /* 鼠标离开窗口时回到正中 */
   document.addEventListener('mouseleave', function () {
     target.x = 0;
     target.y = 0;
   });
 
-  /* 瞳孔位移上限：源图坐标里的安全值，再按实际渲染尺寸换算成 CSS 像素。
-     源图 800px 宽，虹膜半径 36px，眼白左右余量约 34 / 19px、上下 22 / 14px；
-     取 6px / 3.5px 留足余量，保证任何情况下都不碰眼眶。 */
+  /* ---------- 图片解码完成后再显示，避免先闪出两只眼睛 ---------- */
+  var allImgs = [].slice.call(document.querySelectorAll('.avatar-tilt img'));
+  var revealed = false;
+
+  function reveal() {
+    if (revealed) return;
+    revealed = true;
+    body.classList.add('is-ready');
+  }
+
+  if (allImgs.length) {
+    var waits = allImgs.map(function (im) {
+      if (im.decode) return im.decode().catch(function () {});
+      return Promise.resolve();
+    });
+    Promise.all(waits).then(reveal);
+    // 兜底：网络异常时最多等 5 秒也要显示
+    window.setTimeout(reveal, 5000);
+  } else {
+    reveal();
+  }
+
+  /* ---------- 瞳孔位移 ---------- */
   var SRC_W = 800, EYE_SRC_X = 6, EYE_SRC_Y = 3.5;
   var maxEyeX = 3, maxEyeY = 2;
+
   function updateEyeRange() {
     if (!avatar) return;
     var w = avatar.getBoundingClientRect().width || 300;
@@ -53,13 +72,11 @@
   window.addEventListener('resize', updateEyeRange);
 
   /* ---------- 逐帧缓动 ---------- */
-  var raf = 0;
   function tick() {
     var k = 0.12;
     current.x += (target.x - current.x) * k;
     current.y += (target.y - current.y) * k;
 
-    // 静止超过 3 秒后，做极缓慢的自动漂移，避免看起来像张照片
     var idle = Date.now() - lastMove > 3000;
     var dx = current.x, dy = current.y;
     if (idle) {
@@ -68,7 +85,6 @@
       dy += Math.cos(t * 0.8) * 0.08;
     }
 
-    // 硬性夹紧：无论鼠标在哪个边缘、是否叠加了自动漂移
     dx = Math.max(-1, Math.min(1, dx));
     dy = Math.max(-1, Math.min(1, dy));
 
@@ -76,10 +92,41 @@
     root.style.setProperty('--my', dy.toFixed(4));
     root.style.setProperty('--eye-x', (dx * maxEyeX).toFixed(2) + 'px');
     root.style.setProperty('--eye-y', (dy * maxEyeY).toFixed(2) + 'px');
-    raf = requestAnimationFrame(tick);
+    requestAnimationFrame(tick);
   }
 
-  if (!reduce) raf = requestAnimationFrame(tick);
+  if (!reduce) requestAnimationFrame(tick);
+
+  /* ---------- 眨眼 ---------- */
+  var blinkTimer = 0;
+  var blinkReset = 0;
+
+  function closeEyes(ms) {
+    body.classList.add('eyes-closed');
+    window.clearTimeout(blinkReset);
+    blinkReset = window.setTimeout(function () {
+      body.classList.remove('eyes-closed');
+    }, ms);
+  }
+
+  function scheduleBlink() {
+    window.clearTimeout(blinkTimer);
+    // 2.6–7 秒随机，偶尔连眨两下，更像真人
+    blinkTimer = window.setTimeout(function () {
+      closeEyes(100);
+      if (Math.random() < 0.25) {
+        window.setTimeout(function () { closeEyes(85); }, 230);
+      }
+      scheduleBlink();
+    }, 2600 + Math.random() * 4400);
+  }
+
+  if (!reduce) {
+    window.setTimeout(scheduleBlink, 1600 + Math.random() * 1200);
+  }
+
+  /* 供调试/截图用 */
+  window.forceBlink = function (ms) { closeEyes(ms || 400); };
 
   /* ---------- 进入 ---------- */
   var leaving = false;
@@ -88,7 +135,7 @@
     leaving = true;
     body.classList.add('is-leaving');
     window.setTimeout(function () {
-      window.location.href = href || (enterBtn ? enterBtn.href : 'index.html');
+      window.location.href = href || (enterBtn ? enterBtn.href : 'home.html');
     }, 420);
   }
 
@@ -100,7 +147,6 @@
     });
   }
 
-  /* 键盘：Enter / 空格进入，方向键也能"看一眼" */
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Enter' || e.key === ' ') {
       if (document.activeElement && document.activeElement.tagName === 'A' &&
@@ -110,11 +156,11 @@
     }
   });
 
-  /* 页面从 bfcache 恢复时复位 */
   window.addEventListener('pageshow', function (e) {
     if (e.persisted) {
       leaving = false;
       body.classList.remove('is-leaving');
+      body.classList.remove('eyes-closed');
     }
   });
 })();

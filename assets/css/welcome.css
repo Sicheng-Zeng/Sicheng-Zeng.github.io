@@ -90,6 +90,7 @@ body.welcome {
 }
 
 .avatar-wrap {
+  position: relative;
   perspective: 1200px;
   display: grid;
   justify-items: center;
@@ -113,7 +114,8 @@ body.welcome {
 }
 
 .avatar-base,
-.avatar-eyes {
+.avatar-eyes,
+.avatar-blink {
   display: block;
   height: 100%;
   width: auto;
@@ -122,15 +124,50 @@ body.welcome {
   -webkit-user-drag: none;
 }
 
-.avatar-eyes {
+.avatar-eyes,
+.avatar-blink {
   position: absolute;
   inset: 0;
   height: 100%;
   margin: auto;
+}
+
+.avatar-eyes {
   transform: translate3d(var(--eye-x), var(--eye-y), 0);
-  transition: transform 0.1s linear;
+  transition: transform 0.1s linear, opacity 0.06s linear;
   will-change: transform;
 }
+
+/* 眨眼图层：平时完全透明，眨眼瞬间显示（只含眼睑区域） */
+.avatar-blink {
+  opacity: 0;
+  transition: opacity 0.06s linear;
+  pointer-events: none;
+}
+
+body.eyes-closed .avatar-blink { opacity: 1; }
+body.eyes-closed .avatar-eyes { opacity: 0; }
+
+/* 图片解码完成前不显示，避免"先出现两只眼睛"的闪烁 */
+.avatar-tilt { opacity: 0; }
+body.is-ready .avatar-tilt { opacity: 1; transition: opacity 0.45s var(--ease); }
+
+/* 加载期间垫一张模糊占位图（1KB），避免中间大片空白 */
+.avatar-wrap::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: url("../img/welcome/avatar-lqip.webp") center / contain no-repeat;
+  filter: blur(10px) saturate(0.9);
+  opacity: 0.9;
+  transition: opacity 0.45s var(--ease);
+  pointer-events: none;
+}
+body.is-ready .avatar-wrap::before { opacity: 0; }
+
+/* 阴影也要等人物出现再显示，否则会看到一团孤零零的灰影 */
+.avatar-shadow { opacity: 0; transition: opacity 0.45s var(--ease); }
+body.is-ready .avatar-shadow { opacity: 1; }
 
 .avatar-shadow {
   position: absolute;
